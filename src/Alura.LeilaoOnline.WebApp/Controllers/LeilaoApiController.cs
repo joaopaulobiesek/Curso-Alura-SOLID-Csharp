@@ -4,6 +4,7 @@ using Alura.LeilaoOnline.WebApp.Models;
 using Alura.LeilaoOnline.WebApp.Dados;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace Alura.LeilaoOnline.WebApp.Controllers
 {
@@ -23,14 +24,14 @@ namespace Alura.LeilaoOnline.WebApp.Controllers
         [HttpGet]
         public IActionResult EndpointGetLeiloes()
         {
-            var leiloes = _dao.BuscarLeiloes();
+            var leiloes = _dao.BuscarTodosLeiloes();
             return Ok(leiloes);
         }
 
         [HttpGet("{id}")]
         public IActionResult EndpointGetLeilaoById(int id)
         {
-            var leilao = _dao.BuscarPorId(id);
+            var leilao = _dao.BuscarLeilaoPorId(id);
             if (leilao == null)
             {
                 return NotFound();
@@ -41,27 +42,51 @@ namespace Alura.LeilaoOnline.WebApp.Controllers
         [HttpPost]
         public IActionResult EndpointPostLeilao(Leilao leilao)
         {
-            _dao.Incluir(leilao);
+            _dao.IncluirLeilao(leilao);
             return Ok(leilao);
         }
 
         [HttpPut]
         public IActionResult EndpointPutLeilao(Leilao leilao)
         {
-            _dao.Alterar(leilao);
+            _dao.AlterarLeilao(leilao);
             return Ok(leilao);
         }
 
         [HttpDelete("{id}")]
         public IActionResult EndpointDeleteLeilao(int id)
         {
-            var leilao = _dao.BuscarPorId(id);
+            var leilao = _dao.BuscarLeilaoPorId(id);
             if (leilao == null)
             {
                 return NotFound();
             }
-            _dao.Excluir(leilao);
+            _dao.ExcluirLeilao(leilao);
             return NoContent();
+        }
+
+        [HttpPost("{id}/pregao")]
+        public IActionResult EndpointIniciaPregao(int id)
+        {
+            var leilao = _dao.BuscarLeilaoPorId(id);
+            if (leilao == null) return NotFound();
+            if (leilao.Situacao != SituacaoLeilao.Rascunho) return StatusCode(405);
+            leilao.Situacao = SituacaoLeilao.Pregao;
+            leilao.Inicio = DateTime.Now;
+            _dao.AlterarLeilao(leilao);
+            return Ok();
+        }
+
+        [HttpDelete("{id}/pregao")]
+        public IActionResult EndpointFinalizaPregao(int id)
+        {
+            var leilao = _dao.BuscarLeilaoPorId(id);
+            if (leilao == null) return NotFound();
+            if (leilao.Situacao != SituacaoLeilao.Pregao) return StatusCode(405);
+            leilao.Situacao = SituacaoLeilao.Finalizado;
+            leilao.Termino = DateTime.Now;
+            _dao.AlterarLeilao(leilao);
+            return Ok();
         }
 
     }
